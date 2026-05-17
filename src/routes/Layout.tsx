@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Suspense } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -16,6 +16,8 @@ function PageLoader() {
 }
 
 export default function Layout() {
+  const location = useLocation();
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -24,7 +26,7 @@ export default function Layout() {
           <Outlet />
         </Suspense>
       </main>
-      <ScrollReveal />
+      <ScrollReveal triggerKey={location.pathname} />
       <Footer />
     </div>
   );

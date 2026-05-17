@@ -4,7 +4,6 @@ import { CartProvider } from "@/context/CartContext";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import Layout from "@/routes/Layout";
 
-// Lazy load all route components
 const Home = lazy(() => import("@/routes/index"));
 const Shop = lazy(() => import("@/routes/shop"));
 const ProductDetail = lazy(() => import("@/routes/product.$id"));
@@ -35,6 +34,10 @@ export default function App() {
         <ScrollToTop />
         <Suspense fallback={<LoadingSpinner />}>
           <Routes>
+            {/* Admin gets no navbar/footer */}
+            <Route path="/admin" element={<Admin />} />
+
+            {/* All other routes use the Layout */}
             <Route element={<Layout />}>
               <Route path="/" element={<Home />} />
               <Route path="/shop" element={<Shop />} />
@@ -45,7 +48,6 @@ export default function App() {
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/about" element={<About />} />
-              <Route path="/admin" element={<Admin />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
