@@ -14,7 +14,7 @@ export function ScrollReveal({ triggerKey }: { triggerKey: string }) {
           }
         });
       },
-      { threshold: 0.18 },
+      { threshold: 0, rootMargin: "0px 0px -50px 0px" },
     );
 
     elements.forEach((el) => {
@@ -23,7 +23,16 @@ export function ScrollReveal({ triggerKey }: { triggerKey: string }) {
       }
     });
 
-    return () => observer.disconnect();
+    // Fallback: force-reveal anything still hidden after 1s
+    const fallback = setTimeout(() => {
+      document.querySelectorAll<HTMLElement>(".scroll-reveal:not(.scroll-reveal-visible)")
+        .forEach(el => el.classList.add("scroll-reveal-visible"));
+    }, 1000);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(fallback);
+    };
   }, [triggerKey]);
 
   return null;
