@@ -32,8 +32,8 @@ export const Route = createFileRoute("/admin")({
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "north2025"; // change to your liking
+const ADMIN_USER = import.meta.env.VITE_ADMIN_USER;
+const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS;
 const SESSION_KEY = "north_admin_session";
 
 const EMPTY_PRODUCT: Omit<Product, "id"> = {
