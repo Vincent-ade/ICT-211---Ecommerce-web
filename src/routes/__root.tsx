@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, Link, createRootRouteWithContext, useRouter, HeadContent, Scripts, } from "@tanstack/react-router";
-import appCss from "../styles.css?url";
+import "../styles.css";
 import { CartProvider } from "@/context/CartContext";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -71,7 +71,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "NORTH — Modern Essentials" },
       { name: "description", content: "Curated essentials for the modern wardrobe and home." },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
