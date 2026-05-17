@@ -1,15 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCart } from "@/context/CartContext";
-
-export const Route = createFileRoute("/checkout")({
-  head: () => ({ meta: [{ title: "Checkout — NORTH" }] }),
-  component: Checkout,
-});
 
 type FormState = {
   name: string;
@@ -22,7 +17,7 @@ type FormState = {
   cvc: string;
 };
 
-function Checkout() {
+export default function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
   const navigate = useNavigate();
   const [form, setForm] = useState<FormState>({
@@ -71,7 +66,7 @@ function Checkout() {
     return (
       <div className="mx-auto max-w-md py-24 text-center">
         <h1 className="text-2xl font-bold">Your cart is empty</h1>
-        <Button className="mt-6" onClick={() => navigate({ to: "/shop" })}>
+        <Button className="mt-6" onClick={() => navigate("/shop")}>
           Go to shop
         </Button>
       </div>
@@ -88,7 +83,7 @@ function Checkout() {
         <p className="mt-2 text-muted-foreground">
           Thanks {form.name.split(" ")[0]}, we sent a confirmation to {form.email}.
         </p>
-        <Button className="mt-8" onClick={() => navigate({ to: "/" })}>
+        <Button className="mt-8" onClick={() => navigate("/")}>
           Back home
         </Button>
       </div>

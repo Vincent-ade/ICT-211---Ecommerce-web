@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
@@ -16,19 +15,9 @@ function loadProducts(): Product[] {
   return productsData as Product[];
 }
 
-// ─── Route ────────────────────────────────────────────────────────────────────
+// ─── Component ────────────────────────────────────────────────────────────────
 
-export const Route = createFileRoute("/shop")({
-  head: () => ({
-    meta: [
-      { title: "Shop — NORTH" },
-      { name: "description", content: "Browse all products. Filter by category and price." },
-    ],
-  }),
-  component: Shop,
-});
-
-function Shop() {
+export default function Shop() {
   const all = useMemo(() => loadProducts(), []);
 
   const categories = useMemo(

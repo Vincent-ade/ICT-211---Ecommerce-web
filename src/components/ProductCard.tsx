@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { useCart, type Product } from "@/context/CartContext";
 import { Button } from "@/components/ui/button";
 
@@ -8,8 +8,7 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <div className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-shadow hover:shadow-lg">
       <Link
-        to="/product/$id"
-        params={{ id: product.id }}
+        to={`/product/${product.id}`}
         className="relative block aspect-square overflow-hidden bg-muted"
       >
         <img
@@ -25,8 +24,7 @@ export function ProductCard({ product }: { product: Product }) {
             {product.category}
           </p>
           <Link
-            to="/product/$id"
-            params={{ id: product.id }}
+            to={`/product/${product.id}`}
             className="mt-1 line-clamp-1 text-sm font-medium text-foreground hover:underline"
           >
             {product.name}

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { Link, useParams } from "react-router-dom";
 import { useState } from "react";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,29 +15,26 @@ function loadProducts(): Product[] {
   return productsData as Product[];
 }
 
-// ─── Route ────────────────────────────────────────────────────────────────────
+// ─── Component ────────────────────────────────────────────────────────────────
 
-export const Route = createFileRoute("/product/$id")({
-  component: ProductDetail,
-  notFoundComponent: () => (
-    <div className="mx-auto max-w-md py-24 text-center">
-      <h1 className="text-2xl font-bold">Product not found</h1>
-      <p className="mt-2 text-muted-foreground">It may have been removed.</p>
-      <Button asChild className="mt-6">
-        <Link to="/shop">Back to shop</Link>
-      </Button>
-    </div>
-  ),
-});
-
-function ProductDetail() {
-  const { id } = Route.useParams();
+export default function ProductDetail() {
+  const { id } = useParams<{ id: string }>();
   const product = loadProducts().find((p) => p.id === id);
   const { addToCart } = useCart();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 
-  if (!product) throw notFound();
+  if (!product) {
+    return (
+      <div className="mx-auto max-w-md py-24 text-center">
+        <h1 className="text-2xl font-bold">Product not found</h1>
+        <p className="mt-2 text-muted-foreground">It may have been removed.</p>
+        <Button asChild className="mt-6">
+          <Link to="/shop">Back to shop</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="scroll-reveal mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">

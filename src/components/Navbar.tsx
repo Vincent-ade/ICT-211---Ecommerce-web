@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "react-router-dom";
 import { ShoppingBag, User, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/context/CartContext";
@@ -7,6 +7,9 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 export function Navbar() {
   const { totalItems } = useCart();
   const [open, setOpen] = useState(false);
+  const location = useLocation();
+
+  const isActive = (path: string) => location.pathname === path || (path === "/" && location.pathname === "/");
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
@@ -18,34 +21,33 @@ export function Navbar() {
         <nav className="hidden items-center gap-8 md:flex">
           <Link
             to="/"
-            activeOptions={{ exact: true }}
-            activeProps={{ className: "text-foreground" }}
-            inactiveProps={{ className: "text-muted-foreground" }}
-            className="text-sm font-medium transition-colors hover:text-foreground"
+            className={`text-sm font-medium transition-colors hover:text-foreground ${
+              isActive("/") ? "text-foreground" : "text-muted-foreground"
+            }`}
           >
             Home
           </Link>
           <Link
             to="/shop"
-            activeProps={{ className: "text-foreground" }}
-            inactiveProps={{ className: "text-muted-foreground" }}
-            className="text-sm font-medium transition-colors hover:text-foreground"
+            className={`text-sm font-medium transition-colors hover:text-foreground ${
+              isActive("/shop") ? "text-foreground" : "text-muted-foreground"
+            }`}
           >
             Shop
           </Link>
           <Link
             to="/about"
-            activeProps={{ className: "text-foreground" }}
-            inactiveProps={{ className: "text-muted-foreground" }}
-            className="text-sm font-medium transition-colors hover:text-foreground"
+            className={`text-sm font-medium transition-colors hover:text-foreground ${
+              isActive("/about") ? "text-foreground" : "text-muted-foreground"
+            }`}
           >
             About
           </Link>
           <Link
             to="/contact"
-            activeProps={{ className: "text-foreground" }}
-            inactiveProps={{ className: "text-muted-foreground" }}
-            className="text-sm font-medium transition-colors hover:text-foreground"
+            className={`text-sm font-medium transition-colors hover:text-foreground ${
+              isActive("/contact") ? "text-foreground" : "text-muted-foreground"
+            }`}
           >
             Contact
           </Link>

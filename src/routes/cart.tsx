@@ -1,15 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CartItem } from "@/components/CartItem";
 import { useCart } from "@/context/CartContext";
 
-export const Route = createFileRoute("/cart")({
-  head: () => ({ meta: [{ title: "Cart — NORTH" }] }),
-  component: CartPage,
-});
-
-function CartPage() {
+export default function CartPage() {
   const { items, totalPrice, totalItems, clearCart } = useCart();
 
   if (items.length === 0) {

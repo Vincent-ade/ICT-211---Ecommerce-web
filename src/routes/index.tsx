@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { useState } from "react";
 import { ArrowRight, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,19 +8,7 @@ import { ProductCard } from "@/components/ProductCard";
 import productsData from "@/data/products.json";
 import type { Product } from "@/context/CartContext";
 
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "NORTH — Modern Essentials" },
-      { name: "description", content: "Shop curated everyday essentials, free shipping over $50." },
-      { property: "og:title", content: "NORTH — Modern Essentials" },
-      { property: "og:description", content: "Shop curated everyday essentials." },
-    ],
-  }),
-  component: Home,
-});
-
-function Home() {
+export default function Home() {
   const featured = (productsData as Product[]).slice(0, 4);
   const [email, setEmail] = useState("");
 

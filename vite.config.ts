@@ -1,11 +1,21 @@
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
-import { nitro } from "nitro/vite";
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import path from "path";
 
 export default defineConfig({
-  tanstackStart: {
-    server: { entry: "server" },
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
   },
-  vite: {
-    plugins: [nitro({ preset: "vercel" })],
+  server: {
+    port: 5173,
+    open: true,
+  },
+  build: {
+    outDir: "dist",
+    sourcemap: false,
   },
 });

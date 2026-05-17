@@ -1,15 +1,10 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export const Route = createFileRoute("/register")({
-  head: () => ({ meta: [{ title: "Create account — NORTH" }] }),
-  component: Register,
-});
-
-function Register() {
+export default function Register() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -28,7 +23,7 @@ function Register() {
     setErrors(errs);
     if (Object.keys(errs).length) return;
     setLoading(true);
-    setTimeout(() => navigate({ to: "/" }), 600);
+    setTimeout(() => navigate("/"), 600);
   };
 
   return (

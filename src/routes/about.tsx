@@ -1,21 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Leaf, Package, Users, Sparkles } from "lucide-react";
 
-export const Route = createFileRoute("/about")({
-  head: () => ({
-    meta: [
-      { title: "About — NORTH" },
-      { name: "description", content: "Our story: timeless essentials, considered materials, honest prices." },
-      { property: "og:title", content: "About NORTH" },
-      { property: "og:description", content: "Our story and values." },
-    ],
-  }),
-  component: AboutPage,
-});
-
-function AboutPage() {
+export default function AboutPage() {
   const values = [
     { icon: Leaf, title: "Sustainable", text: "Responsibly sourced materials with traceable supply chains." },
     { icon: Package, title: "Built to last", text: "Designed and constructed for years of everyday wear." },

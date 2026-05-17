@@ -1,15 +1,10 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign in — NORTH" }] }),
-  component: Login,
-});
-
-function Login() {
+export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,7 +19,7 @@ function Login() {
     setErrors(errs);
     if (Object.keys(errs).length) return;
     setLoading(true);
-    setTimeout(() => navigate({ to: "/" }), 600);
+    setTimeout(() => navigate("/"), 600);
   };
 
   return (

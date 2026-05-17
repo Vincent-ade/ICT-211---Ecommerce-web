@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   Plus,
@@ -17,18 +17,6 @@ import {
 import { Button } from "@/components/ui/button";
 import productsData from "@/data/products.json";
 import type { Product } from "@/context/CartContext";
-
-// ─── Route ───────────────────────────────────────────────────────────────────
-
-export const Route = createFileRoute("/admin")({
-  head: () => ({
-    meta: [
-      { title: "Admin — NORTH" },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
-  component: AdminPage,
-});
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -61,7 +49,18 @@ function loadProducts(): Product[] {
 function saveProducts(products: Product[]) {
   localStorage.setItem("north_products", JSON.stringify(products));
 }
+// ─── Component ───────────────────────────────────────────────────────────────────
 
+export default function AdminPage() {
+  const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1");
+
+  if (!isLoggedIn) {
+    return <LoginScreen onLogin={() => setIsLoggedIn(true)} />;
+  }
+
+  return <AdminDashboard onLogout={() => { sessionStorage.removeItem(SESSION_KEY); setIsLoggedIn(false); }} />;
+}
 // ─── Login Screen ─────────────────────────────────────────────────────────────
 
 function LoginScreen({ onLogin }: { onLogin: () => void }) {
@@ -735,14 +734,13 @@ function ProductRow({
 
 // ─── Page Root ────────────────────────────────────────────────────────────────
 
-function AdminPage() {
+function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [loggedIn, setLoggedIn] = useState(
     () => sessionStorage.getItem(SESSION_KEY) === "1",
   );
 
   function handleLogout() {
-    sessionStorage.removeItem(SESSION_KEY);
-    setLoggedIn(false);
+    onLogout();
   }
 
   if (!loggedIn) {

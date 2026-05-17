@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,19 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/contact")({
-  head: () => ({
-    meta: [
-      { title: "Contact — NORTH" },
-      { name: "description", content: "Get in touch with the NORTH team — we typically reply within one business day." },
-      { property: "og:title", content: "Contact NORTH" },
-      { property: "og:description", content: "Reach our customer care team." },
-    ],
-  }),
-  component: ContactPage,
-});
-
-function ContactPage() {
+export default function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
 
   const onSubmit = (e: React.FormEvent) => {
