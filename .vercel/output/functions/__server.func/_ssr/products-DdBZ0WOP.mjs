@@ -1,0 +1,101 @@
+const productsData = [
+  {
+    id: "1",
+    name: "Classic Leather Sneakers",
+    price: 89.99,
+    category: "Footwear",
+    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80",
+    description: "Timeless leather sneakers crafted for everyday comfort and style. Cushioned insole, durable rubber outsole."
+  },
+  {
+    id: "2",
+    name: "Minimalist Wristwatch",
+    price: 149,
+    category: "Accessories",
+    image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=600&q=80",
+    description: "Sleek stainless steel watch with a clean dial. Water resistant up to 30m."
+  },
+  {
+    id: "3",
+    name: "Wireless Headphones",
+    price: 199.99,
+    category: "Electronics",
+    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80",
+    description: "Over-ear noise cancelling headphones with 30-hour battery life and premium sound."
+  },
+  {
+    id: "4",
+    name: "Cotton Crewneck Tee",
+    price: 24.5,
+    category: "Clothing",
+    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80",
+    description: "Soft 100% organic cotton t-shirt. Relaxed fit, perfect for layering."
+  },
+  {
+    id: "5",
+    name: "Leather Backpack",
+    price: 179,
+    category: "Accessories",
+    image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&q=80",
+    description: "Full-grain leather backpack with padded laptop sleeve and adjustable straps."
+  },
+  {
+    id: "6",
+    name: "Smart Fitness Band",
+    price: 59.99,
+    category: "Electronics",
+    image: "https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=600&q=80",
+    description: "Track steps, heart rate, sleep, and workouts with a 7-day battery."
+  },
+  {
+    id: "7",
+    name: "Wool Blend Coat",
+    price: 249,
+    category: "Clothing",
+    image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&q=80",
+    description: "Tailored wool blend overcoat. Warm, structured, and effortlessly elegant."
+  },
+  {
+    id: "8",
+    name: "Canvas Low-Top Shoes",
+    price: 49.99,
+    category: "Footwear",
+    image: "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=600&q=80",
+    description: "Lightweight canvas sneakers, a versatile staple for any wardrobe."
+  },
+  {
+    id: "9",
+    name: "Aluminum Desk Lamp",
+    price: 79,
+    category: "Home",
+    image: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&q=80",
+    description: "Adjustable LED desk lamp with three brightness levels and USB charging port."
+  },
+  {
+    id: "10",
+    name: "Ceramic Pour-Over Set",
+    price: 39.5,
+    category: "Home",
+    image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80",
+    description: "Hand-finished ceramic dripper and carafe for the perfect morning brew."
+  },
+  {
+    id: "11",
+    name: "Polarized Sunglasses",
+    price: 119,
+    category: "Accessories",
+    image: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=600&q=80",
+    description: "UV400 polarized lenses set in a lightweight acetate frame."
+  },
+  {
+    id: "12",
+    name: "Mechanical Keyboard",
+    price: 139,
+    category: "Electronics",
+    image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600&q=80",
+    description: "Tactile mechanical switches, hot-swappable keys, and RGB backlight."
+  }
+];
+export {
+  productsData as p
+};
