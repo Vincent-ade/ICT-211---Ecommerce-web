@@ -15,6 +15,11 @@ export function ProductCard({ product }: { product: Product }) {
           src={product.image}
           alt={product.name}
           loading="lazy"
+          onError={(e) => {
+            const img = e.currentTarget;
+            img.onerror = null;
+            img.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3C/svg%3E";
+          }}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </Link>

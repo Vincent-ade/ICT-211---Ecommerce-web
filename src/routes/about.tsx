@@ -69,17 +69,17 @@ export default function AboutPage() {
       </section>
       <section className="mt-12 border-t border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
+          <div className="flex flex-col items-center gap-3 text-center">
+            <div className="max-w-3xl">
               <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">FAQ</p>
               <h2 className="mt-4 text-3xl font-bold tracking-tight">Questions we hear most often</h2>
             </div>
-            <p className="max-w-xl text-sm text-muted-foreground">
+            <p className="max-w-3xl text-sm text-muted-foreground">
               Answers to our most common questions about shipping, returns, and the NORTH experience.
             </p>
           </div>
 
-          <Accordion type="single" collapsible className="mt-10 space-y-4">
+          <Accordion type="single" collapsible className="mt-10 mx-auto max-w-3xl space-y-4">
             <AccordionItem value="shipping">
               <AccordionTrigger>Do you offer free shipping?</AccordionTrigger>
               <AccordionContent>

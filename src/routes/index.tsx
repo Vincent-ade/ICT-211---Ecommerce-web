@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { toast } from "sonner";
 import { ProductCard } from "@/components/ProductCard";
 import productsData from "@/data/products.json";
+import type { CarouselApi } from "@/components/ui/carousel";
 import type { Product } from "@/context/CartContext";
 
 export default function Home() {
@@ -17,6 +19,70 @@ export default function Home() {
     { name: "Accessories", img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80" },
     { name: "Home", img: "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=800&q=80" },
   ];
+
+  const galleryImages = [
+    {
+      src: "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?w=1000&q=80",
+      alt: "t-shirt",
+      caption: "T-shirt with skeleton design",
+    },
+    {
+      src: "https://images.pexels.com/photos/7749381/pexels-photo-7749381.jpeg",
+      alt: "Watch",
+      caption: "One of the best watches you can find",
+    },
+    {
+      src: "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=1000&q=80",
+      alt: "Living space",
+      caption: "Couch for your living space",
+    },
+    {
+      src: "https://images.pexels.com/photos/29909645/pexels-photo-29909645.jpeg",
+      alt: "Lamp for your bedroom",
+      caption: "Gives your room a cool vibe",
+    },
+    {
+      src: "https://images.pexels.com/photos/33166918/pexels-photo-33166918.jpeg",
+      alt: "Backpack",
+      caption: "Everyday carry — functional and refined",
+    },
+    {
+      src: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1000&q=80",
+      alt: "Fitness band",
+      caption: "Gear designed for daily activity",
+    },
+  ];
+
+
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    if (!carouselApi) return;
+
+    const onSelect = () => {
+      setGalleryIndex(carouselApi.selectedScrollSnap());
+    };
+
+    carouselApi.on("select", onSelect);
+    onSelect();
+
+    if (!isPaused) {
+      const interval = window.setInterval(() => {
+        carouselApi.scrollNext();
+      }, 4500);
+
+      return () => {
+        carouselApi.off("select", onSelect);
+        window.clearInterval(interval);
+      };
+    }
+
+    return () => {
+      carouselApi.off("select", onSelect);
+    };
+  }, [carouselApi, isPaused]);
 
   const testimonials = [
     { quote: "The quality is unreal for the price. My new daily carry.", name: "Maya R.", role: "Verified buyer" },
@@ -113,6 +179,57 @@ export default function Home() {
                   <p className="mt-1 text-sm opacity-90">Shop now →</p>
                 </div>
               </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Gallery */}
+      <section className="scroll-reveal border-t border-border bg-secondary">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 text-center">
+          <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">Gallery</p>
+          <h2 className="mt-4 text-3xl font-bold tracking-tight text-foreground">Our collection in motion</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-sm text-muted-foreground">
+            Browse product highlights — the carousel auto-advances but you can pause and navigate manually.
+          </p>
+
+          <div className="mx-auto mt-10 max-w-6xl overflow-visible">
+            <Carousel
+              setApi={setCarouselApi}
+              opts={{ loop: true, align: "center" }}
+              onMouseEnter={() => setIsPaused(true)}
+              onMouseLeave={() => setIsPaused(false)}
+            >
+              <CarouselContent className="gap-4">
+                {galleryImages.map((image, idx) => (
+                  <CarouselItem key={idx} className="basis-1/2 md:basis-1/3 px-2">
+                    <div className="relative overflow-hidden rounded-2xl bg-black/5 shadow-lg">
+                      <img
+                        src={image.src}
+                        alt={image.alt}
+                        className="h-70 w-full object-cover transition duration-500"
+                      />
+                      <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/65 to-transparent px-6 py-4 text-left text-white sm:px-8">
+                        <p className="text-sm font-medium">{image.caption}</p>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="h-10! w-10! bg-background/80 shadow-lg -left-6" aria-label="Previous image" />
+              <CarouselNext className="h-10! w-10! bg-background/80 shadow-lg -right-6" aria-label="Next image" />
+            </Carousel>
+          </div>
+
+          <div className="mt-6 flex justify-center gap-3">
+            {galleryImages.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => carouselApi?.scrollTo(idx)}
+                className={`h-3 w-3 rounded-full ${galleryIndex === idx ? "bg-foreground" : "bg-muted-foreground/60"}`}
+                aria-label={`Show slide ${idx + 1}`}
+              />
             ))}
           </div>
         </div>
