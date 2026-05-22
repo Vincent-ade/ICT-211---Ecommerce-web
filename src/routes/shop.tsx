@@ -2,38 +2,30 @@ import { useEffect, useMemo, useState } from "react";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import productsData from "@/data/products.json";
+import { fetchProducts } from "@/lib/products";
 import type { Product } from "@/context/CartContext";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function loadProducts(): Product[] {
-  try {
-    const raw = localStorage.getItem("north_products");
-    if (raw) return JSON.parse(raw) as Product[];
-  } catch {}
-  return productsData as Product[];
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export default function Shop() {
-  const all = useMemo(() => loadProducts(), []);
+  const [all, setAll] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [category, setCategory] = useState<string>("All");
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
+
+  useEffect(() => {
+    fetchProducts().then((data) => {
+      setAll(data);
+      const max = Math.ceil(Math.max(...data.map((p) => p.price)));
+      setPriceRange([0, max]);
+      setLoading(false);
+    });
+  }, []);
 
   const categories = useMemo(
     () => ["All", ...Array.from(new Set(all.map((p) => p.category)))],
-    [all],
+    [all]
   );
-  const maxPrice = Math.ceil(Math.max(...all.map((p) => p.price)));
 
-  const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState<string>("All");
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, maxPrice]);
-
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 300);
-    return () => clearTimeout(t);
-  }, []);
+  const maxPrice = Math.ceil(Math.max(...(all.length ? all.map((p) => p.price) : [0])));
 
   const filtered = all.filter((p) => {
     const inCategory = category === "All" || p.category === category;

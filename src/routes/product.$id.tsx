@@ -1,30 +1,42 @@
 import { Link, useParams } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart, type Product } from "@/context/CartContext";
-import productsData from "@/data/products.json";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function loadProducts(): Product[] {
-  try {
-    const raw = localStorage.getItem("north_products");
-    if (raw) return JSON.parse(raw) as Product[];
-  } catch {}
-  return productsData as Product[];
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
+import { fetchProducts } from "@/lib/products";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
-  const product = loadProducts().find((p) => p.id === id);
   const { addToCart } = useCart();
+  const [product, setProduct] = useState<Product | null | undefined>(undefined);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 
-  if (!product) {
+  useEffect(() => {
+    fetchProducts().then((data) => {
+      const found = data.find((p) => p.id === id);
+      setProduct(found ?? null);
+    });
+  }, [id]);
+
+  // Still loading
+  if (product === undefined) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid gap-12 lg:grid-cols-2">
+          <div className="aspect-square animate-pulse rounded-2xl bg-muted" />
+          <div className="space-y-4">
+            <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+            <div className="h-10 w-64 animate-pulse rounded bg-muted" />
+            <div className="h-6 w-20 animate-pulse rounded bg-muted" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Not found
+  if (product === null) {
     return (
       <div className="mx-auto max-w-md py-24 text-center">
         <h1 className="text-2xl font-bold">Product not found</h1>

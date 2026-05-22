@@ -1,9 +1,7 @@
-import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   Plus,
   Trash2,
-  Save,
   LogOut,
   Package,
   Edit3,
@@ -13,10 +11,17 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import productsData from "@/data/products.json";
+import initialProducts from "@/data/products.json";
 import type { Product } from "@/context/CartContext";
+import {
+  fetchProducts,
+  saveProduct,
+  deleteProduct,
+  seedProducts,
+} from "@/lib/products";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -38,29 +43,23 @@ function generateId() {
   return `prod_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
-function loadProducts(): Product[] {
-  try {
-    const raw = localStorage.getItem("north_products");
-    if (raw) return JSON.parse(raw) as Product[];
-  } catch {}
-  return productsData as Product[];
-}
-
-function saveProducts(products: Product[]) {
-  localStorage.setItem("north_products", JSON.stringify(products));
-}
-// ─── Component ───────────────────────────────────────────────────────────────────
+// ─── Page Root ────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
-  const navigate = useNavigate();
-  const [isLoggedIn, setIsLoggedIn] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1");
-
-  if (!isLoggedIn) {
-    return <LoginScreen onLogin={() => setIsLoggedIn(true)} />;
-  }
-
-  return <AdminDashboard onLogout={() => { sessionStorage.removeItem(SESSION_KEY); setIsLoggedIn(false); }} />;
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    () => sessionStorage.getItem(SESSION_KEY) === "1"
+  );
+  if (!isLoggedIn) return <LoginScreen onLogin={() => setIsLoggedIn(true)} />;
+  return (
+    <AdminDashboard
+      onLogout={() => {
+        sessionStorage.removeItem(SESSION_KEY);
+        setIsLoggedIn(false);
+      }}
+    />
+  );
 }
+
 // ─── Login Screen ─────────────────────────────────────────────────────────────
 
 function LoginScreen({ onLogin }: { onLogin: () => void }) {
@@ -74,7 +73,6 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
     e.preventDefault();
     setError("");
     setLoading(true);
-    // Simulate network delay
     setTimeout(() => {
       if (username === ADMIN_USER && password === ADMIN_PASS) {
         sessionStorage.setItem(SESSION_KEY, "1");
@@ -89,7 +87,6 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
-        {/* Logo / Header */}
         <div className="mb-10 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-foreground text-background">
             <ShieldCheck className="h-6 w-6" />
@@ -100,7 +97,6 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
           </p>
         </div>
 
-        {/* Form */}
         <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
           <div className="space-y-5">
             <div>
@@ -177,296 +173,16 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
   );
 }
 
-// ─── Product Form Drawer ──────────────────────────────────────────────────────
+// ─── Admin Dashboard ──────────────────────────────────────────────────────────
 
-interface ProductFormProps {
-  initial: Product | null; // null = new product
-  onSave: (p: Product) => void;
-  onClose: () => void;
-  categories: string[];
-}
-
-function ProductFormDrawer({
-  initial,
-  onSave,
-  onClose,
-  categories,
-}: ProductFormProps) {
-  const isNew = !initial;
-  const [form, setForm] = useState<Product>(
-    initial ?? { id: generateId(), ...EMPTY_PRODUCT },
-  );
-  const [errors, setErrors] = useState<Partial<Record<keyof Product, string>>>({});
-  const [imgError, setImgError] = useState(false);
-
-  function set<K extends keyof Product>(key: K, value: Product[K]) {
-    setForm((f) => ({ ...f, [key]: value }));
-    setErrors((e) => ({ ...e, [key]: undefined }));
-    if (key === "image") setImgError(false);
-  }
-
-  function validate() {
-    const e: typeof errors = {};
-    if (!form.name.trim()) e.name = "Name is required";
-    if (!form.category.trim()) e.category = "Category is required";
-    if (!form.price || form.price <= 0) e.price = "Price must be > 0";
-    if (!form.image.trim()) e.image = "Image URL is required";
-    if (!form.description.trim()) e.description = "Description is required";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  }
-
-  function handleSave() {
-    if (validate()) onSave(form);
-  }
-
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [onClose]);
-
-  // Prevent body scroll while drawer is open
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
-  }, []);
-
-  return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
-        onClick={onClose}
-      />
-
-      {/* Drawer panel */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={isNew ? "Add product" : "Edit product"}
-        className="fixed inset-y-0 right-0 z-50 flex h-screen w-full max-w-lg flex-col border-l border-border bg-background shadow-2xl overflow-hidden"
-        style={{ animation: "slideInRight 0.22s cubic-bezier(0.25,0.46,0.45,0.94)" }}
-      >
-        <style>{`
-          @keyframes slideInRight {
-            from { transform: translateX(100%); }
-            to   { transform: translateX(0); }
-          }
-        `}</style>
-
-        {/* ── Header ── */}
-        <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-5">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              {isNew ? "New product" : "Edit product"}
-            </p>
-            <h2 className="mt-0.5 text-lg font-semibold">
-              {isNew ? "Add to catalogue" : form.name || "Untitled"}
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground"
-            aria-label="Close"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* ── Scrollable body ── */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
-          {/* Image preview hero */}
-          <div className="mb-6 overflow-hidden rounded-xl border border-border bg-muted">
-            {form.image && !imgError ? (
-              <img
-                key={form.image}
-                src={form.image}
-                alt="Preview"
-                className="h-56 w-full object-cover"
-                onError={() => setImgError(true)}
-              />
-            ) : (
-              <div className="flex h-56 flex-col items-center justify-center gap-2 text-muted-foreground/40">
-                <Package className="h-10 w-10" />
-                <span className="text-xs">Image preview</span>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-5">
-            <Field label="Product Name" error={errors.name}>
-              <input
-                autoFocus
-                value={form.name}
-                onChange={(e) => set("name", e.target.value)}
-                className={inputCls(!!errors.name)}
-                placeholder="e.g. Alpine Fleece Jacket"
-              />
-            </Field>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Category" error={errors.category}>
-                <input
-                  list="category-list"
-                  value={form.category}
-                  onChange={(e) => set("category", e.target.value)}
-                  className={inputCls(!!errors.category)}
-                  placeholder="e.g. Outerwear"
-                />
-                <datalist id="category-list">
-                  {categories.filter((c) => c !== "All").map((c) => (
-                    <option key={c} value={c} />
-                  ))}
-                </datalist>
-              </Field>
-
-              <Field label="Price (USD)" error={errors.price}>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={form.price || ""}
-                    onChange={(e) => set("price", parseFloat(e.target.value) || 0)}
-                    className={inputCls(!!errors.price) + " pl-7"}
-                    placeholder="0.00"
-                  />
-                </div>
-              </Field>
-            </div>
-
-            <Field label="Image URL" error={errors.image}>
-              <input
-                value={form.image}
-                onChange={(e) => set("image", e.target.value)}
-                className={inputCls(!!errors.image)}
-                placeholder="https://images.unsplash.com/…"
-              />
-            </Field>
-
-            <Field label="Description" error={errors.description}>
-              <textarea
-                value={form.description}
-                onChange={(e) => set("description", e.target.value)}
-                rows={4}
-                className={inputCls(!!errors.description) + " resize-none leading-relaxed"}
-                placeholder="Describe the product — materials, fit, use case…"
-              />
-            </Field>
-          </div>
-        </div>
-
-        {/* ── Footer ── */}
-        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border bg-muted/30 px-6 py-4">
-          <Button variant="ghost" onClick={onClose} className="text-muted-foreground">
-            Cancel
-          </Button>
-          <Button onClick={handleSave} className="min-w-35">
-            <Check className="mr-1.5 h-4 w-4" />
-            {isNew ? "Add Product" : "Save Changes"}
-          </Button>
-        </div>
-      </div>
-    </>
-  );
-}
-
-// ─── Small UI Helpers ─────────────────────────────────────────────────────────
-
-function inputCls(hasError: boolean) {
-  return [
-    "w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none ring-offset-background transition",
-    "focus:ring-2 focus:ring-foreground/20",
-    hasError
-      ? "border-destructive focus:border-destructive"
-      : "border-border focus:border-foreground",
-  ].join(" ");
-}
-
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-sm font-medium">{label}</label>
-      {children}
-      {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
-    </div>
-  );
-}
-
-// ─── Delete Confirm ──────────────────────────────
-
-function DeleteConfirm({
-  product,
-  onConfirm,
-  onCancel,
-}: {
-  product: Product;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-background p-6 shadow-2xl">
-        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
-          <Trash2 className="h-5 w-5 text-destructive" />
-        </div>
-        <h2 className="font-semibold">Delete product?</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          "<span className="font-medium text-foreground">{product.name}</span>"
-          will be permanently removed from the store.
-        </p>
-        <div className="mt-6 flex gap-3">
-          <Button variant="ghost" className="flex-1" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button
-            variant="destructive"
-            className="flex-1"
-            onClick={onConfirm}
-          >
-            Delete
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Toast ──────────────────────
-
-function Toast({ message }: { message: string }) {
-  return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl border border-border bg-foreground px-4 py-3 text-sm font-medium text-background shadow-lg animate-in fade-in slide-in-from-bottom-2">
-      <Check className="h-4 w-4" />
-      {message}
-    </div>
-  );
-}
-
-// ─── Dashboard (logged in) ───────────────────────────
-
-function Dashboard({ onLogout }: { onLogout: () => void }) {
-  const [products, setProducts] = useState<Product[]>(loadProducts);
+function AdminDashboard({ onLogout }: { onLogout: () => void }) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
-  const [editingProduct, setEditingProduct] = useState<Product | null | "new">(
-    null,
-  );
+  const [editingProduct, setEditingProduct] = useState<Product | null | "new">(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [unsaved, setUnsaved] = useState(false);
 
   const categories = [
     "All",
@@ -487,32 +203,53 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     setTimeout(() => setToast(null), 2500);
   }
 
-  function handleSaveProduct(product: Product) {
-    setProducts((prev) => {
-      const exists = prev.find((p) => p.id === product.id);
-      return exists
-        ? prev.map((p) => (p.id === product.id ? product : p))
-        : [...prev, product];
-    });
-    setEditingProduct(null);
-    setUnsaved(true);
-    showToast(
-      editingProduct === "new" ? "Product added" : "Product updated",
-    );
+  async function loadProducts() {
+    setLoading(true);
+    try {
+      const data = await fetchProducts();
+      if (data.length === 0) {
+        await seedProducts(initialProducts as Product[]);
+        setProducts(initialProducts as Product[]);
+        showToast("Store seeded with initial products");
+      } else {
+        setProducts(data);
+      }
+    } catch {
+      showToast("Failed to load products");
+    }
+    setLoading(false);
   }
 
-  function handleDelete() {
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  async function handleSaveProduct(product: Product) {
+    try {
+      await saveProduct(product);
+      setProducts((prev) => {
+        const exists = prev.find((p) => p.id === product.id);
+        return exists
+          ? prev.map((p) => (p.id === product.id ? product : p))
+          : [...prev, product];
+      });
+      setEditingProduct(null);
+      showToast(editingProduct === "new" ? "Product added" : "Product updated");
+    } catch {
+      showToast("Failed to save product");
+    }
+  }
+
+  async function handleDelete() {
     if (!deletingProduct) return;
-    setProducts((prev) => prev.filter((p) => p.id !== deletingProduct.id));
-    setDeletingProduct(null);
-    setUnsaved(true);
-    showToast("Product deleted");
-  }
-
-  function handlePublish() {
-    saveProducts(products);
-    setUnsaved(false);
-    showToast("Changes published to store");
+    try {
+      await deleteProduct(deletingProduct.id);
+      setProducts((prev) => prev.filter((p) => p.id !== deletingProduct.id));
+      setDeletingProduct(null);
+      showToast("Product deleted");
+    } catch {
+      showToast("Failed to delete product");
+    }
   }
 
   return (
@@ -533,19 +270,9 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           </div>
 
           <div className="flex items-center gap-2">
-            {unsaved && (
-              <span className="hidden items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 sm:flex dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
-                Unpublished changes
-              </span>
-            )}
-            <Button
-              size="sm"
-              disabled={!unsaved}
-              onClick={handlePublish}
-            >
-              <Save className="mr-1.5 h-3.5 w-3.5" />
-              Publish
+            <Button size="sm" variant="ghost" onClick={loadProducts}>
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+              Refresh
             </Button>
             <Button size="sm" variant="ghost" onClick={onLogout}>
               <LogOut className="mr-1.5 h-3.5 w-3.5" />
@@ -597,14 +324,17 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         </div>
 
         {/* Product Table */}
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="flex h-64 items-center justify-center">
+            <span className="h-8 w-8 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border text-muted-foreground">
             <Package className="h-8 w-8 opacity-30" />
             <p className="text-sm">No products found.</p>
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl border border-border">
-            {/* Header row */}
             <div className="hidden grid-cols-[80px_1fr_140px_100px_80px_80px] gap-4 border-b border-border bg-muted/40 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid">
               <span>Image</span>
               <span>Name</span>
@@ -613,8 +343,6 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
               <span className="text-center">Edit</span>
               <span className="text-center">Delete</span>
             </div>
-
-            {/* Rows */}
             <div className="divide-y divide-border">
               {filtered.map((product) => (
                 <ProductRow
@@ -628,12 +356,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         )}
 
-        {/* Info banner */}
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Changes are saved locally. Click{" "}
-          <strong className="text-foreground">Publish</strong> to make them
-          live in the shop. Refreshing the page without publishing will keep
-          edits in this session.
+          Changes are saved instantly to the database and visible to all users.
         </p>
       </main>
 
@@ -660,6 +384,202 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   );
 }
 
+// ─── Product Form Drawer ──────────────────────────────────────────────────────
+
+interface ProductFormProps {
+  initial: Product | null;
+  onSave: (p: Product) => void;
+  onClose: () => void;
+  categories: string[];
+}
+
+function ProductFormDrawer({
+  initial,
+  onSave,
+  onClose,
+  categories,
+}: ProductFormProps) {
+  const isNew = !initial;
+  const [form, setForm] = useState<Product>(
+    initial ?? { id: generateId(), ...EMPTY_PRODUCT }
+  );
+  const [errors, setErrors] = useState<Partial<Record<keyof Product, string>>>({});
+  const [imgError, setImgError] = useState(false);
+
+  function set<K extends keyof Product>(key: K, value: Product[K]) {
+    setForm((f) => ({ ...f, [key]: value }));
+    setErrors((e) => ({ ...e, [key]: undefined }));
+    if (key === "image") setImgError(false);
+  }
+
+  function validate() {
+    const e: typeof errors = {};
+    if (!form.name.trim()) e.name = "Name is required";
+    if (!form.category.trim()) e.category = "Category is required";
+    if (!form.price || form.price <= 0) e.price = "Price must be > 0";
+    if (!form.image.trim()) e.image = "Image URL is required";
+    if (!form.description.trim()) e.description = "Description is required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  function handleSave() {
+    if (validate()) onSave(form);
+  }
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+        onClick={onClose}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={isNew ? "Add product" : "Edit product"}
+        className="fixed inset-y-0 right-0 z-50 flex h-screen w-full max-w-lg flex-col border-l border-border bg-background shadow-2xl overflow-hidden"
+        style={{ animation: "slideInRight 0.22s cubic-bezier(0.25,0.46,0.45,0.94)" }}
+      >
+        <style>{`
+          @keyframes slideInRight {
+            from { transform: translateX(100%); }
+            to   { transform: translateX(0); }
+          }
+        `}</style>
+
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-5">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              {isNew ? "New product" : "Edit product"}
+            </p>
+            <h2 className="mt-0.5 text-lg font-semibold">
+              {isNew ? "Add to catalogue" : form.name || "Untitled"}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="mb-6 overflow-hidden rounded-xl border border-border bg-muted">
+            {form.image && !imgError ? (
+              <img
+                key={form.image}
+                src={form.image}
+                alt="Preview"
+                className="h-56 w-full object-cover"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <div className="flex h-56 flex-col items-center justify-center gap-2 text-muted-foreground/40">
+                <Package className="h-10 w-10" />
+                <span className="text-xs">Image preview</span>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-5">
+            <Field label="Product Name" error={errors.name}>
+              <input
+                autoFocus
+                value={form.name}
+                onChange={(e) => set("name", e.target.value)}
+                className={inputCls(!!errors.name)}
+                placeholder="e.g. Alpine Fleece Jacket"
+              />
+            </Field>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Category" error={errors.category}>
+                <input
+                  list="category-list"
+                  value={form.category}
+                  onChange={(e) => set("category", e.target.value)}
+                  className={inputCls(!!errors.category)}
+                  placeholder="e.g. Outerwear"
+                />
+                <datalist id="category-list">
+                  {categories.filter((c) => c !== "All").map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
+              </Field>
+
+              <Field label="Price (USD)" error={errors.price}>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={form.price || ""}
+                    onChange={(e) =>
+                      set("price", parseFloat(e.target.value) || 0)
+                    }
+                    className={inputCls(!!errors.price) + " pl-7"}
+                    placeholder="0.00"
+                  />
+                </div>
+              </Field>
+            </div>
+
+            <Field label="Image URL" error={errors.image}>
+              <input
+                value={form.image}
+                onChange={(e) => set("image", e.target.value)}
+                className={inputCls(!!errors.image)}
+                placeholder="https://images.unsplash.com/…"
+              />
+            </Field>
+
+            <Field label="Description" error={errors.description}>
+              <textarea
+                value={form.description}
+                onChange={(e) => set("description", e.target.value)}
+                rows={4}
+                className={inputCls(!!errors.description) + " resize-none leading-relaxed"}
+                placeholder="Describe the product — materials, fit, use case…"
+              />
+            </Field>
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border bg-muted/30 px-6 py-4">
+          <Button variant="ghost" onClick={onClose} className="text-muted-foreground">
+            Cancel
+          </Button>
+          <Button onClick={handleSave} className="min-w-35">
+            <Check className="mr-1.5 h-4 w-4" />
+            {isNew ? "Add Product" : "Save Changes"}
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ─── Product Row ──────────────────────────────────────────────────────────────
 
 function ProductRow({
@@ -673,7 +593,6 @@ function ProductRow({
 }) {
   return (
     <div className="group flex flex-col gap-3 px-4 py-3 transition hover:bg-muted/30 sm:grid sm:grid-cols-[80px_1fr_140px_100px_80px_80px] sm:items-center sm:gap-4">
-      {/* Image */}
       <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
         {product.image ? (
           <img
@@ -691,7 +610,6 @@ function ProductRow({
         )}
       </div>
 
-      {/* Name + description */}
       <div className="min-w-0">
         <p className="truncate font-medium">{product.name}</p>
         <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
@@ -699,15 +617,12 @@ function ProductRow({
         </p>
       </div>
 
-      {/* Category */}
       <span className="w-fit rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground">
         {product.category}
       </span>
 
-      {/* Price */}
       <span className="text-sm font-semibold">${product.price.toFixed(2)}</span>
 
-      {/* Edit */}
       <div className="sm:text-center">
         <button
           onClick={onEdit}
@@ -718,7 +633,6 @@ function ProductRow({
         </button>
       </div>
 
-      {/* Delete */}
       <div className="sm:text-center">
         <button
           onClick={onDelete}
@@ -732,20 +646,78 @@ function ProductRow({
   );
 }
 
-// ─── Page Root ────────────────────────────────────────────────────────────────
+// ─── Delete Confirm ───────────────────────────────────────────────────────────
 
-function AdminDashboard({ onLogout }: { onLogout: () => void }) {
-  const [loggedIn, setLoggedIn] = useState(
-    () => sessionStorage.getItem(SESSION_KEY) === "1",
+function DeleteConfirm({
+  product,
+  onConfirm,
+  onCancel,
+}: {
+  product: Product;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-background p-6 shadow-2xl">
+        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+          <Trash2 className="h-5 w-5 text-destructive" />
+        </div>
+        <h2 className="font-semibold">Delete product?</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          "<span className="font-medium text-foreground">{product.name}</span>"
+          will be permanently removed from the store.
+        </p>
+        <div className="mt-6 flex gap-3">
+          <Button variant="ghost" className="flex-1" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button variant="destructive" className="flex-1" onClick={onConfirm}>
+            Delete
+          </Button>
+        </div>
+      </div>
+    </div>
   );
+}
 
-  function handleLogout() {
-    onLogout();
-  }
+// ─── Toast ────────────────────────────────────────────────────────────────────
 
-  if (!loggedIn) {
-    return <LoginScreen onLogin={() => setLoggedIn(true)} />;
-  }
+function Toast({ message }: { message: string }) {
+  return (
+    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl border border-border bg-foreground px-4 py-3 text-sm font-medium text-background shadow-lg animate-in fade-in slide-in-from-bottom-2">
+      <Check className="h-4 w-4" />
+      {message}
+    </div>
+  );
+}
 
-  return <Dashboard onLogout={handleLogout} />;
+// ─── Small UI Helpers ─────────────────────────────────────────────────────────
+
+function inputCls(hasError: boolean) {
+  return [
+    "w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none ring-offset-background transition",
+    "focus:ring-2 focus:ring-foreground/20",
+    hasError
+      ? "border-destructive focus:border-destructive"
+      : "border-border focus:border-foreground",
+  ].join(" ");
+}
+
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-sm font-medium">{label}</label>
+      {children}
+      {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+    </div>
+  );
 }
